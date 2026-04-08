@@ -16,3 +16,13 @@ staticfiles/
 # IDE
 .idea/
 .vscode/
+
+
+*.pyc
+*.pyo
+*.pyd
+
+.env
+.DS_Store
+Thumbs.db
+sent_emails/

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f8;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1, h2 {
+            color: #111827;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .success-message {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .links {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: #4f46e5;
+            font-weight: bold;
+        }
+
+        .links a.delete {
+            color: red;
+        }
+
+        .summary {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .cart-list li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .btn-danger {
+            color: #dc2626;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Личный кабинет</h1>
+
+        <div class="section">
+            <p><strong>Email:</strong> {{ request.user.email }}</p>
+        </div>
+
+        <div class="section">
+            <h2>Редактировать профиль</h2>
+
+            {% if success_message %}
+                <p class="success-message">{{ success_message }}</p>
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <label for="{{ form.phone_number.id_for_label }}">Номер телефона:</label>
+                {{ form.phone_number }}
+
+                <label for="{{ form.address.id_for_label }}">Адрес доставки:</label>
+                {{ form.address }}
+
+                <button type="submit">Сохранить</button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h2>История заказов</h2>
+
+            {% if orders %}
+                <ul>
+                    {% for order in orders %}
+                        <li>
+                            Заказ #{{ order.id }} — {{ order.get_status_display }} — {{ order.created_at }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>У вас пока нет заказов.</p>
+            {% endif %}
+        </div>
+
+        <div class="section">
+            <h2>Корзина</h2>
+
+            {% if cart_items %}
+                <ul class="cart-list">
+                    {% for item in cart_items %}
+                        <li>
+                            {{ item.product.name }} — {{ item.quantity }} шт — {{ item.get_total_price|floatformat:2 }} $
+                            <a href="/shop/remove-from-cart/{{ item.id }}/" class="btn btn-danger">
+                                Удалить
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <p class="summary">Итого: {{ total_price|floatformat:2 }} $</p>
+
+                <p>
+                    <a href="/shop/checkout/" class="btn btn-success">
+                        Оформить заказ
+                    </a>
+                </p>
+            {% else %}
+                <p>Корзина пуста.</p>
+            {% endif %}
+        </div>
+
+        <div class="links">
+            <a href="/password_reset/">Сменить пароль</a>
+            <a href="/accounts/logout/">Выйти</a>
+            <a href="/accounts/delete/" class="delete">Удалить аккаунт</a>
+        </div>
+    </div>
+</body>
+</html>
+

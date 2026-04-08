@@ -1,156 +1,176 @@
-from django.conf import settings
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
 
 class Category(models.Model):
-    name = models.CharField("Название", max_length=120)
-    description = models.TextField("Описание", blank=True)
+    name = models.CharField(max_length=255, verbose_name='Название')
     parent = models.ForeignKey(
-        "self",
+        'self',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="children",
-        verbose_name="Родительская категория",
+        related_name='children',
+        verbose_name='Родительская категория'
     )
 
     class Meta:
-        verbose_name = "Категория"
-        verbose_name_plural = "Категории"
-        ordering = ["name"]
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
     def __str__(self):
-        parts = [self.name]
-        p = self.parent
-        while p:
-            parts.append(p.name)
-            p = p.parent
-        return " / ".join(reversed(parts))
+        if self.parent:
+            return f'{self.parent.name} / {self.name}'
+        return self.name
 
 
 class Product(models.Model):
+    name = models.CharField(max_length=255, verbose_name='Название')
     category = models.ForeignKey(
         Category,
-        on_delete=models.PROTECT,
-        related_name="products",
-        verbose_name="Категория",
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name='Категория'
     )
-    name = models.CharField("Название", max_length=200)
-    description = models.TextField("Описание", blank=True)
-    price = models.DecimalField(
-        "Цена",
-        max_digits=10,
-        decimal_places=2,
-        validators=[MinValueValidator(0)],
-    )
-    stock = models.PositiveIntegerField("На складе", default=0)
-    created_at = models.DateTimeField("Добавлено", auto_now_add=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена')
+    stock = models.PositiveIntegerField(default=0, verbose_name='На складе')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Добавлено')
 
     class Meta:
-        verbose_name = "Товар"
-        verbose_name_plural = "Товары"
-        ordering = ["-created_at"]
+        verbose_name = 'Товар'
+        verbose_name_plural = 'Товары'
+        ordering = ['-created_at']
 
     def __str__(self):
         return self.name
 
-    def is_in_stock(self) -> bool:
-        return self.stock > 0
-
 
 class Order(models.Model):
-    class Status(models.TextChoices):
-        NEW = "new", "Новый"
-        PAID = "paid", "Оплачен"
-        SHIPPED = "shipped", "Отправлен"
-        DONE = "done", "Завершён"
-        CANCELED = "canceled", "Отменён"
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('paid', 'Оплачен'),
+        ('shipped', 'Отправлен'),
+        ('completed', 'Завершён'),
+        ('cancelled', 'Отменён'),
+    ]
 
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'accounts.CustomUser',
         on_delete=models.CASCADE,
-        related_name="orders",
-        verbose_name="Пользователь",
+        related_name='orders',
+        verbose_name='Пользователь'
     )
-    status = models.CharField("Статус", max_length=20, choices=Status.choices, default=Status.NEW)
-    created_at = models.DateTimeField("Создан", auto_now_add=True)
-    updated_at = models.DateTimeField("Обновлён", auto_now=True)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='new',
+        verbose_name='Статус'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
 
     class Meta:
-        verbose_name = "Заказ"
-        verbose_name_plural = "Заказы"
-        ordering = ["-created_at"]
+        verbose_name = 'Заказ'
+        verbose_name_plural = 'Заказы'
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Order #{self.pk} ({self.user})"
-
-    @property
-    def total_amount(self):
-        return sum(item.total_price for item in self.items.all())
+        return f'Заказ #{self.id} ({self.user.email})'
 
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
-        related_name="items",
-        verbose_name="Заказ",
+        related_name='items',
+        verbose_name='Заказ'
     )
     product = models.ForeignKey(
         Product,
-        on_delete=models.PROTECT,
-        related_name="order_items",
-        verbose_name="Товар",
+        on_delete=models.CASCADE,
+        verbose_name='Товар'
     )
-    quantity = models.PositiveIntegerField("Количество", default=1, validators=[MinValueValidator(1)])
+    quantity = models.PositiveIntegerField(default=1, verbose_name='Количество')
     price_at_purchase = models.DecimalField(
-        "Цена на момент покупки",
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(0)],
+        verbose_name='Цена на момент покупки'
     )
 
     class Meta:
-        verbose_name = "Позиция заказа"
-        verbose_name_plural = "Позиции заказа"
+        verbose_name = 'Позиция заказа'
+        verbose_name_plural = 'Позиции заказа'
 
     def __str__(self):
-        return f"{self.product} x {self.quantity}"
-
-    @property
-    def total_price(self):
-        return self.quantity * self.price_at_purchase
+        return f'{self.product.name} x {self.quantity}'
 
 
 class Review(models.Model):
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
-        related_name="reviews",
-        verbose_name="Товар",
+        related_name='reviews',
+        verbose_name='Товар'
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'accounts.CustomUser',
         on_delete=models.CASCADE,
-        related_name="reviews",
-        verbose_name="Автор",
+        related_name='reviews',
+        verbose_name='Пользователь'
     )
-    rating = models.PositiveSmallIntegerField(
-        "Рейтинг",
-        validators=[MinValueValidator(1), MaxValueValidator(5)],
-    )
-    text = models.TextField("Текст", blank=True)
-    created_at = models.DateTimeField("Создан", auto_now_add=True)
+    rating = models.PositiveSmallIntegerField(verbose_name='Оценка')
+    text = models.TextField(blank=True, verbose_name='Текст отзыва')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
 
     class Meta:
-        verbose_name = "Отзыв"
-        verbose_name_plural = "Отзывы"
-        ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(fields=["product", "user"], name="unique_review_per_user_product")
-        ]
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Review({self.product}, {self.user}, {self.rating})"
+        return f'Отзыв {self.user.email} о {self.product.name}'
+
+
+class Cart(models.Model):
+    user = models.OneToOneField(
+        'accounts.CustomUser',
+        on_delete=models.CASCADE,
+        related_name='cart',
+        verbose_name='Пользователь',
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создана')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлена')
+
+    class Meta:
+        verbose_name = 'Корзина'
+        verbose_name_plural = 'Корзины'
+
+    def __str__(self):
+        if self.user:
+            return f'Корзина пользователя {self.user.email}'
+        return f'Корзина #{self.id}'
+
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name='Корзина'
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        verbose_name='Товар'
+    )
+    quantity = models.PositiveIntegerField(default=1, verbose_name='Количество')
+
+    class Meta:
+        verbose_name = 'Позиция корзины'
+        verbose_name_plural = 'Позиции корзины'
+
+    def __str__(self):
+        return f'{self.product.name} x {self.quantity}'
+
+    def get_total_price(self):
+        return self.product.price * self.quantity
 

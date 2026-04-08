@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Письмо отправлено</title>
+</head>
+<body>
+    <h2>Подтвердите email</h2>
+    <p>Мы отправили письмо с ссылкой активации на адрес:</p>
+    <p><strong>{{ user_email }}</strong></p>
+    <p>Пожалуйста, проверьте почту и перейдите по ссылке.</p>
+
+    {% if activation_link %}
+        <hr>
+        <p><strong>Тестовая ссылка активации:</strong></p>
+        <p><a href="{{ activation_link }}">{{ activation_link }}</a></p>
+    {% endif %}
+</body>
+</html>

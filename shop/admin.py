@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Category, Product, Order, OrderItem, Review
+from .models import (
+    Category,
+    Product,
+    Order,
+    OrderItem,
+    Review,
+    Cart,
+    CartItem,
+)
 
 
 @admin.register(Category)
@@ -33,4 +41,20 @@ class OrderAdmin(admin.ModelAdmin):
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ("id", "product", "user", "rating", "created_at")
     list_filter = ("rating",)
-    search_fields = ("product__name", "user__username", "user__email")
+    search_fields = ("product__name", "user__email")
+
+
+class CartItemInline(admin.TabularInline):
+    model = CartItem
+    extra = 0
+
+
+@admin.register(Cart)
+class CartAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "created_at", "updated_at")
+    inlines = (CartItemInline,)
+
+
+@admin.register(CartItem)
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "cart", "product", "quantity")
