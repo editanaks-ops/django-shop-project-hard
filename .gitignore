@@ -28,7 +28,7 @@ Thumbs.db
 sent_emails/
 Screenshot*.png
 main.py
-README.md
+
 requirements.txt
 __pycache__/
 *.pyc
